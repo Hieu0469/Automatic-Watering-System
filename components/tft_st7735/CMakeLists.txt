@@ -1,0 +1,13 @@
+idf_component_register(
+    SRCS
+        "tft_st7735.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        driver
+        esp_driver_gpio
+        esp_driver_spi
+        freertos
+        esp_common
+        log
+)

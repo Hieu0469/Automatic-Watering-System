@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "sms_v1.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        driver
+        esp_driver_gpio
+        esp_adc
+        esp_rom
+        freertos
+)
