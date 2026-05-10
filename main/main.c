@@ -256,7 +256,7 @@ void Watering_task(void *pvParameter)
     while(1) {
         if(mutex == 0) {
             ESP_LOGI("Watering", "Starting watering for %.1f ms", water_time);
-            gpio_set_level(GPIO_OUTPUT_PIN, 1);
+            // gpio_set_level(GPIO_OUTPUT_PIN, 1);
             vTaskDelay((int)(water_time / portTICK_PERIOD_MS)); // Convert ms to ticks
             gpio_set_level(GPIO_OUTPUT_PIN, 0);
             ESP_LOGI("Watering", "Watering done"); 
