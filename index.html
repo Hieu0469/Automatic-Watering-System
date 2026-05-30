@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuzzy Logic Editor — Tưới Tự Động</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size:14px}
+.topbar{display:flex;align-items:center;gap:10px;padding:12px 20px;background:#fff;border-bottom:1px solid #e0ddd6;flex-wrap:wrap}
+.topbar h1{font-size:16px;font-weight:500;flex:1}
+.ble-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:0.5px solid #d3d1c7;background:#f8f7f4;font-size:12px;cursor:pointer;transition:all .15s}
+.ble-pill:hover{border-color:#888}
+.ble-pill.connected{border-color:#86efac;background:#f0fdf4}
+.dot{width:8px;height:8px;border-radius:50%;background:#d3d1c7;flex-shrink:0}
+.dot.on{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+.dot.sending{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+.save-btn{padding:5px 14px;border-radius:20px;border:none;background:#1a1a18;color:#fff;font-size:12px;font-weight:500;cursor:pointer;opacity:.7;transition:all .15s}
+.save-btn:enabled{opacity:1}
+.save-btn:disabled{opacity:.35;cursor:not-allowed}
+.reset-btn{padding:5px 12px;border-radius:20px;border:0.5px solid #d3d1c7;background:#fff;font-size:12px;cursor:pointer}
+.tabs{display:flex;gap:2px;padding:12px 20px 0;background:#fff;border-bottom:1px solid #e0ddd6}
+.tab{padding:8px 16px;border:none;background:transparent;border-bottom:2px solid transparent;cursor:pointer;font-size:13px;font-weight:500;color:#5f5e5a;transition:all .15s;margin-bottom:-1px}
+.tab.active{color:#1a1a18;border-bottom-color:#1a1a18}
+.tab-content{display:none;padding:20px;max-width:1100px;margin:0 auto}
+.tab-content.active{display:block}
+.card{background:#fff;border-radius:10px;border:0.5px solid #d3d1c7;padding:16px 20px;margin-bottom:14px}
+.mf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.mf-chart{width:100%;height:170px;display:block;border-radius:6px;border:0.5px solid #e0ddd6;background:#fcfcfb;cursor:crosshair}
+.param-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.param-table th{color:#aaa;font-weight:500;padding:4px 6px;text-align:left;border-bottom:1px solid #f0ede6}
+.param-table td{padding:3px 6px;border-bottom:0.5px solid #f5f3ee}
+.param-table input[type=number]{width:62px;padding:3px 6px;border:0.5px solid #d3d1c7;border-radius:4px;font-size:12px;color:#1a1a18;background:#fff}
+.param-table input:focus{outline:none;border-color:#555;box-shadow:0 0 0 2px rgba(0,0,0,.07)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:#5f5e5a}
+.leg-line{width:20px;height:2.5px;border-radius:2px}
+/* Rule matrix */
+.rule-section{margin-bottom:18px}
+.rule-sec-title{font-size:12px;font-weight:500;color:#5f5e5a;margin-bottom:8px;padding:4px 8px;background:#f5f5f3;border-radius:5px}
+.rule-grid{display:grid;grid-template-columns:100px repeat(3,1fr);gap:3px}
+.rh{font-size:11px;color:#aaa;text-align:center;padding:4px 0}
+.rl{font-size:11px;color:#5f5e5a;font-weight:500;text-align:right;padding:4px 8px 4px 0;display:flex;align-items:center;justify-content:flex-end}
+.rc{text-align:center;border-radius:5px;border:0.5px solid #d3d1c7;padding:6px 4px;font-size:11px;font-weight:600;cursor:pointer;transition:all .1s;user-select:none}
+.rc:hover{transform:scale(1.04)}
+.rc.HIGH{background:#dbeafe;color:#1e40af;border-color:#93c5fd}
+.rc.LOW{background:#fef9c3;color:#92400e;border-color:#fde68a}
+.rc.NONE{background:#f1f0ea;color:#78716c;border-color:#e5e2db}
+/* Monitor */
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.live-card{background:#fff;border:0.5px solid #e0ddd6;border-radius:8px;padding:14px;text-align:center}
+.lv{font-size:28px;font-weight:500;line-height:1}
+.ll{font-size:11px;color:#aaa;margin-top:4px}
+.lbar{height:5px;border-radius:3px;background:#f1f0ea;margin-top:10px;overflow:hidden}
+.lbar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.pump-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border:0.5px solid #e0ddd6;border-radius:8px;font-size:13px}
+.pdot{width:10px;height:10px;border-radius:50%;background:#e5e2db;flex-shrink:0}
+.pdot.on{background:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.2)}
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:#1a1a18;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;transition:all .3s;z-index:999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:#14532d}
+.toast.err{background:#7f1d1d}
+/* Log */
+.log-box{background:#1a1a18;color:#86efac;border-radius:8px;padding:12px 14px;font-family:monospace;font-size:11px;line-height:1.7;max-height:200px;overflow-y:auto;margin-top:12px}
+.log-box .err{color:#fca5a5}
+.log-box .warn{color:#fde68a}
+.log-box .info{color:#a5f3fc}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🌱 Fuzzy Logic Editor <span style="font-size:11px;color:#aaa;font-weight:400">— ESP32 Tưới Tự Động</span></h1>
+  <button class="ble-pill" id="ble-btn" onclick="toggleBLE()">
+    <div class="dot" id="ble-dot"></div>
+    <span id="ble-label">Kết nối BLE</span>
+  </button>
+  <button class="save-btn" id="save-btn" onclick="pushAllToESP32()" disabled>Gửi lên ESP32</button>
+  <button class="reset-btn" onclick="resetToDefault()">Reset mặc định</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('membership',this)">Hàm Membership</button>
+  <button class="tab" onclick="switchTab('rules',this)">Ma Trận Luật</button>
+  <button class="tab" onclick="switchTab('monitor',this)">Giám Sát Live</button>
+</div>
+
+<!-- ═══ TAB MEMBERSHIP ═══ -->
+<div id="tab-membership" class="tab-content active">
+  <div class="mf-grid">
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px">Độ ẩm đất <span style="font-size:11px;color:#aaa;font-weight:400">(soil %)</span></div>
+      <svg id="svg-soil" class="mf-chart"></svg>
+      <div class="legend">
+        <div class="leg"><div class="leg-line" style="background:#3b82f6"></div>Thấp</div>
+        <div class="leg"><div class="leg-line" style="background:#f59e0b"></div>Vừa</div>
+        <div class="leg"><div class="leg-line" style="background:#10b981"></div>Cao</div>
+      </div>
+      <table class="param-table">
+        <thead><tr><th>Hàm</th><th>a</th><th>b (đỉnh)</th><th>c</th></tr></thead>
+        <tbody>
+          <tr><td style="color:#3b82f6;font-weight:500">Thấp</td>
+            <td><input type="number" id="s_low_a" value="0"   onchange="paramChanged()"></td>
+            <td><input type="number" id="s_low_b" value="20"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_low_c" value="30"  onchange="paramChanged()"></td></tr>
+          <tr><td style="color:#f59e0b;font-weight:500">Vừa</td>
+            <td><input type="number" id="s_med_a" value="25"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_med_b" value="32"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_med_c" value="40"  onchange="paramChanged()"></td></tr>
+          <tr><td style="color:#10b981;font-weight:500">Cao</td>
+            <td><input type="number" id="s_hi_a"  value="35"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_hi_b"  value="45"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_hi_c"  value="100" onchange="paramChanged()"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px">Độ ẩm không khí <span style="font-size:11px;color:#aaa;font-weight:400">(humidity %)</span></div>
+      <svg id="svg-hum" class="mf-chart"></svg>
+      <div class="legend">
+        <div class="leg"><div class="leg-line" style="background:#3b82f6"></div>Thấp</div>
+        <div class="leg"><div class="leg-line" style="background:#f59e0b"></div>Vừa</div>
+        <div class="leg"><div class="leg-line" style="background:#10b981"></div>Cao</div>
+      </div>
+      <table class="param-table">
+        <thead><tr><th>Hàm</th><th>a</th><th>b (đỉnh)</th><th>c</th></tr></thead>
+        <tbody>
+          <tr><td style="color:#3b82f6;font-weight:500">Thấp</td>
+            <td><input type="number" id="h_low_a" value="0"   onchange="paramChanged()"></td>
+            <td><input type="number" id="h_low_b" value="40"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_low_c" value="60"  onchange="paramChanged()"></td></tr>
+          <tr><td style="color:#f59e0b;font-weight:500">Vừa</td>
+            <td><input type="number" id="h_med_a" value="40"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_med_b" value="60"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_med_c" value="80"  onchange="paramChanged()"></td></tr>
+          <tr><td style="color:#10b981;font-weight:500">Cao</td>
+            <td><input type="number" id="h_hi_a"  value="60"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_hi_b"  value="80"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_hi_c"  value="100" onchange="paramChanged()"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px">Nhiệt độ <span style="font-size:11px;color:#aaa;font-weight:400">(°C)</span></div>
+      <svg id="svg-temp" class="mf-chart"></svg>
+      <div class="legend">
+        <div class="leg"><div class="leg-line" style="background:#ef4444"></div>Nóng</div>
+        <div class="leg"><div class="leg-line" style="background:#f59e0b"></div>Vừa</div>
+        <div class="leg"><div class="leg-line" style="background:#3b82f6"></div>Lạnh</div>
+      </div>
+      <table class="param-table">
+        <thead><tr><th>Hàm</th><th>a</th><th>b (đỉnh)</th><th>c</th></tr></thead>
+        <tbody>
+          <tr><td style="color:#ef4444;font-weight:500">Nóng</td>
+            <td><input type="number" id="t_hot_a"  value="25" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_hot_b"  value="30" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_hot_c"  value="50" onchange="paramChanged()"></td></tr>
+          <tr><td style="color:#f59e0b;font-weight:500">Vừa</td>
+            <td><input type="number" id="t_med_a"  value="20" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_med_b"  value="25" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_med_c"  value="30" onchange="paramChanged()"></td></tr>
+          <tr><td style="color:#3b82f6;font-weight:500">Lạnh</td>
+            <td><input type="number" id="t_cold_a" value="0"  onchange="paramChanged()"></td>
+            <td><input type="number" id="t_cold_b" value="20" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_cold_c" value="25" onchange="paramChanged()"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <p style="font-size:11px;color:#aaa;margin-top:6px">💡 Kéo đỉnh tam giác trên biểu đồ hoặc nhập số vào bảng. Nhấn "Gửi lên ESP32" để áp dụng.</p>
+</div>
+
+<!-- ═══ TAB RULES ═══ -->
+<div id="tab-rules" class="tab-content">
+  <div class="card">
+    <div style="font-size:14px;font-weight:500;margin-bottom:6px">Ma trận luật mờ</div>
+    <p style="font-size:12px;color:#5f5e5a;margin-bottom:14px">Nhấp ô để xoay: <b style="color:#1e40af">HIGH</b> → <b style="color:#92400e">LOW</b> → NONE. Thay đổi có hiệu lực ngay sau khi gửi lên ESP32.</p>
+    <div id="rule-tables"></div>
+    <div class="legend" style="margin-top:12px">
+      <div class="leg"><span style="width:10px;height:10px;border-radius:2px;background:#dbeafe;display:inline-block"></span>HIGH – tưới nhiều</div>
+      <div class="leg"><span style="width:10px;height:10px;border-radius:2px;background:#fef9c3;display:inline-block"></span>LOW – tưới ít</div>
+      <div class="leg"><span style="width:10px;height:10px;border-radius:2px;background:#f1f0ea;display:inline-block"></span>NONE – không tưới</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB MONITOR ═══ -->
+<div id="tab-monitor" class="tab-content">
+  <div class="card">
+    <div class="live-grid">
+      <div class="live-card">
+        <div class="lv" id="lv-temp" style="color:#ef4444">--</div>
+        <div class="ll">Nhiệt độ (°C)</div>
+        <div class="lbar"><div class="lbar-fill" id="lb-temp" style="background:#ef4444;width:0%"></div></div>
+      </div>
+      <div class="live-card">
+        <div class="lv" id="lv-hum" style="color:#3b82f6">--</div>
+        <div class="ll">Độ ẩm KK (%)</div>
+        <div class="lbar"><div class="lbar-fill" id="lb-hum" style="background:#3b82f6;width:0%"></div></div>
+      </div>
+      <div class="live-card">
+        <div class="lv" id="lv-soil" style="color:#10b981">--</div>
+        <div class="ll">Độ ẩm đất (%)</div>
+        <div class="lbar"><div class="lbar-fill" id="lb-soil" style="background:#10b981;width:0%"></div></div>
+      </div>
+    </div>
+    <div class="pump-row" id="pump-row">
+      <div class="pdot" id="pdot"></div>
+      <span id="pump-txt">Bơm: chờ dữ liệu</span>
+      <span id="water-out" style="margin-left:auto;font-size:12px;color:#aaa"></span>
+    </div>
+    <div class="log-box" id="log-box"><span class="info">Chờ kết nối BLE...</span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+const CYCLE = ['NONE','LOW','HIGH'];
+let rules = [
+  [[2,2,1],[2,1,1],[1,1,1]],
+  [[2,1,1],[1,1,0],[1,0,0]],
+  [[0,0,0],[0,0,0],[0,0,0]]
+];
+let isDirty = false;   // có thay đổi chưa gửi
+let bleDevice=null, sensorChar=null, configChar=null;
+
+// ══════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='rules') renderRules();
+}
+
+// ══════════════════════════════════════════════════════════
+// PARAMS
+// ══════════════════════════════════════════════════════════
+function p(id){return parseFloat(document.getElementById(id).value)||0}
+function setP(id,v){document.getElementById(id).value=parseFloat(v).toFixed(1)}
+
+function getParams(){
+  return {
+    soil:[
+      {a:p('s_low_a'),b:p('s_low_b'),c:p('s_low_c'),col:'#3b82f6',key:'s_low'},
+      {a:p('s_med_a'),b:p('s_med_b'),c:p('s_med_c'),col:'#f59e0b',key:'s_med'},
+      {a:p('s_hi_a'), b:p('s_hi_b'), c:p('s_hi_c'), col:'#10b981',key:'s_hi'}
+    ],
+    hum:[
+      {a:p('h_low_a'),b:p('h_low_b'),c:p('h_low_c'),col:'#3b82f6',key:'h_low'},
+      {a:p('h_med_a'),b:p('h_med_b'),c:p('h_med_c'),col:'#f59e0b',key:'h_med'},
+      {a:p('h_hi_a'), b:p('h_hi_b'), c:p('h_hi_c'), col:'#10b981',key:'h_hi'}
+    ],
+    temp:[
+      {a:p('t_hot_a'), b:p('t_hot_b'), c:p('t_hot_c'), col:'#ef4444',key:'t_hot'},
+      {a:p('t_med_a'), b:p('t_med_b'), c:p('t_med_c'), col:'#f59e0b',key:'t_med'},
+      {a:p('t_cold_a'),b:p('t_cold_b'),c:p('t_cold_c'),col:'#3b82f6',key:'t_cold'}
+    ]
+  };
+}
+
+function paramChanged(){isDirty=true;updateSaveBtn();redrawAll()}
+
+function updateSaveBtn(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled = !isDirty || !configChar;
+  btn.textContent = isDirty ? (configChar?'Gửi lên ESP32':'Gửi lên ESP32 (chưa kết nối)') : 'Đã đồng bộ ✓';
+}
+
+// ══════════════════════════════════════════════════════════
+// CHART DRAW
+// ══════════════════════════════════════════════════════════
+function triMem(x,a,b,c){
+  if(x<=a) return (a===b)?1:0;
+  if(x>=c) return (b===c)?1:0;
+  if(x<=b) return (b===a)?1:(x-a)/(b-a);
+  return (c===b)?1:(c-x)/(c-b);
+}
+
+const dragMap={
+  'svg-soil':{0:{a:'s_low_a',b:'s_low_b',c:'s_low_c'},1:{a:'s_med_a',b:'s_med_b',c:'s_med_c'},2:{a:'s_hi_a',b:'s_hi_b',c:'s_hi_c'}},
+  'svg-hum': {0:{a:'h_low_a',b:'h_low_b',c:'h_low_c'},1:{a:'h_med_a',b:'h_med_b',c:'h_med_c'},2:{a:'h_hi_a',b:'h_hi_b',c:'h_hi_c'}},
+  'svg-temp':{0:{a:'t_hot_a',b:'t_hot_b',c:'t_hot_c'},1:{a:'t_med_a',b:'t_med_b',c:'t_med_c'},2:{a:'t_cold_a',b:'t_cold_b',c:'t_cold_c'}}
+};
+
+function drawChart(svgId, mfList, xMin, xMax){
+  const el=document.getElementById(svgId);
+  if(!el) return;
+  const W=el.clientWidth||320, H=170;
+  const PL=32,PR=8,PT=14,PB=26;
+  const cW=W-PL-PR, cH=H-PT-PB;
+  const tx=v=>PL+(v-xMin)/(xMax-xMin)*cW;
+  const ty=v=>PT+(1-v)*cH;
+  const N=300;
+  let html='';
+  // axes
+  html+=`<line x1="${PL}" y1="${PT+cH}" x2="${PL+cW}" y2="${PT+cH}" stroke="#ddd" stroke-width="0.5"/>`;
+  [0,0.5,1].forEach(v=>{
+    html+=`<line x1="${PL}" y1="${ty(v)}" x2="${PL+cW}" y2="${ty(v)}" stroke="#eee" stroke-width="0.5"/>`;
+    html+=`<text x="${PL-3}" y="${ty(v)+4}" text-anchor="end" font-size="9" fill="#ccc">${v}</text>`;
+  });
+  for(let i=0;i<=4;i++){
+    const v=xMin+i*(xMax-xMin)/4;
+    html+=`<text x="${tx(v)}" y="${H-8}" text-anchor="middle" font-size="9" fill="#ccc">${Math.round(v)}</text>`;
+  }
+  mfList.forEach((mf,idx)=>{
+    let pts=[];
+    for(let i=0;i<=N;i++){
+      const x=xMin+(xMax-xMin)*i/N;
+      pts.push(`${tx(x)},${ty(triMem(x,mf.a,mf.b,mf.c))}`);
+    }
+    const fp=`${tx(xMin)},${ty(0)} ${pts.join(' ')} ${tx(xMax)},${ty(0)}`;
+    html+=`<polygon points="${fp}" fill="${mf.col}" opacity="0.1"/>`;
+    html+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${mf.col}" stroke-width="1.8"/>`;
+    [{v:mf.a,k:'a',y:0},{v:mf.b,k:'b',y:1},{v:mf.c,k:'c',y:0}].forEach(pt=>{
+      if(pt.v<xMin||pt.v>xMax) return;
+      html+=`<circle cx="${tx(pt.v)}" cy="${ty(pt.y)}" r="5" fill="${mf.col}" stroke="#fff" stroke-width="1.5" data-drag="${svgId}|${idx}|${pt.k}" style="cursor:ew-resize"/>`;
+    });
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg">${html}</svg>`;
+  setupDrag(svgId, xMin, xMax);
+}
+
+function setupDrag(svgId, xMin, xMax){
+  const el=document.getElementById(svgId);
+  let drag=null;
+  const move=cx=>{
+    if(!drag) return;
+    const r=el.getBoundingClientRect();
+    const PL=32,PR=8, cW=r.width-PL-PR;
+    const raw=Math.round(xMin+(cx-r.left-PL)/cW*(xMax-xMin));
+    const v=Math.max(xMin,Math.min(xMax,raw));
+    const [sid,idx,k]=drag.split('|');
+    document.getElementById(dragMap[sid][idx][k]).value=v;
+    paramChanged();
+  };
+  el.querySelectorAll('circle').forEach(c=>{
+    c.addEventListener('mousedown',e=>{drag=c.getAttribute('data-drag');e.preventDefault()});
+    c.addEventListener('touchstart',e=>{drag=c.getAttribute('data-drag')},{passive:true});
+  });
+  el.addEventListener('mousemove',e=>move(e.clientX));
+  el.addEventListener('touchmove',e=>move(e.touches[0].clientX));
+  const end=()=>drag=null;
+  el.addEventListener('mouseup',end);el.addEventListener('mouseleave',end);el.addEventListener('touchend',end);
+}
+
+function redrawAll(){
+  const ps=getParams();
+  drawChart('svg-soil',ps.soil,0,100);
+  drawChart('svg-hum', ps.hum, 0,100);
+  drawChart('svg-temp',ps.temp,0,50);
+}
+
+// ══════════════════════════════════════════════════════════
+// RULE MATRIX
+// ══════════════════════════════════════════════════════════
+const soilLbls=['Đất: Thấp','Đất: Vừa','Đất: Cao'];
+const humLbls=['Ẩm KK thấp','Ẩm KK vừa','Ẩm KK cao'];
+const tempLbls=['Nóng','Vừa','Lạnh'];
+const RNAMES=['NONE','LOW','HIGH'];
+
+function renderRules(){
+  let html='';
+  for(let s=0;s<3;s++){
+    html+=`<div class="rule-section">`;
+    html+=`<div class="rule-sec-title">${soilLbls[s]}</div>`;
+    html+=`<div class="rule-grid">`;
+    html+=`<div></div>`;
+    tempLbls.forEach(t=>html+=`<div class="rh">${t}</div>`);
+    for(let h=0;h<3;h++){
+      html+=`<div class="rl">${humLbls[h]}</div>`;
+      for(let t=0;t<3;t++){
+        const v=rules[s][h][t];
+        html+=`<div class="rc ${RNAMES[v]}" onclick="cycleRule(${s},${h},${t})">${RNAMES[v]}</div>`;
+      }
+    }
+    html+=`</div></div>`;
+  }
+  document.getElementById('rule-tables').innerHTML=html;
+}
+
+function cycleRule(s,h,t){
+  rules[s][h][t]=(rules[s][h][t]+1)%3;
+  isDirty=true; updateSaveBtn(); renderRules();
+}
+
+// ══════════════════════════════════════════════════════════
+// BLE
+// ══════════════════════════════════════════════════════════
+const SVC_UUID  ='19b10000-e8f2-537e-4f6c-d104768a1214';
+const CHAR_SNS  ='19b10001-e8f2-537e-4f6c-d104768a1214';
+const CHAR_CFG  ='19b10002-e8f2-537e-4f6c-d104768a1214';
+
+let cfgBuffer='';  // buffer nhận JSON nhiều gói
+
+async function toggleBLE(){
+  if(bleDevice&&bleDevice.gatt.connected){bleDevice.gatt.disconnect();return;}
+  if(!navigator.bluetooth){toast('Cần Chrome trên Desktop/Android','err');return;}
+  try{
+    bleDevice=await navigator.bluetooth.requestDevice({filters:[{services:[SVC_UUID]}]});
+    const srv=await bleDevice.gatt.connect();
+    const svc=await srv.getPrimaryService(SVC_UUID);
+
+    // Char sensor — nhận dữ liệu cảm biến
+    sensorChar=await svc.getCharacteristic(CHAR_SNS);
+    await sensorChar.startNotifications();
+    sensorChar.addEventListener('characteristicvaluechanged',onSensorData);
+
+    // Char config — gửi lệnh & nhận config/ACK
+    configChar=await svc.getCharacteristic(CHAR_CFG);
+    await configChar.startNotifications();
+    configChar.addEventListener('characteristicvaluechanged',onConfigData);
+
+    bleDevice.addEventListener('gattserverdisconnected',onDisconnect);
+    setBLEUI(true, bleDevice.name||'ESP32');
+    log('Đã kết nối: '+bleDevice.name,'info');
+
+    // Yêu cầu ESP32 gửi config hiện tại
+    await writeCmd('GET_CONFIG');
+    log('Đã yêu cầu config từ ESP32...','info');
+  }catch(e){
+    log('Lỗi kết nối: '+e.message,'err');
+  }
+}
+
+function onDisconnect(){
+  setBLEUI(false,'');
+  sensorChar=null; configChar=null;
+  log('Đã ngắt kết nối BLE','warn');
+  updateSaveBtn();
+}
+
+function setBLEUI(connected, name){
+  const dot=document.getElementById('ble-dot');
+  const lbl=document.getElementById('ble-label');
+  const pill=document.getElementById('ble-btn');
+  dot.className='dot'+(connected?' on':'');
+  lbl.textContent=connected?('✓ '+name):'Kết nối BLE';
+  pill.className='ble-pill'+(connected?' connected':'');
+}
+
+// ─── Nhận dữ liệu cảm biến ──────────────────────────────
+function onSensorData(e){
+  const raw=new TextDecoder().decode(e.target.value);
+  const parts=raw.split(',');
+  if(parts.length<3) return;
+  const temp=parseFloat(parts[0]),hum=parseFloat(parts[1]),soil=parseFloat(parts[2]);
+  document.getElementById('lv-temp').textContent=temp.toFixed(1);
+  document.getElementById('lv-hum').textContent=hum.toFixed(1);
+  document.getElementById('lv-soil').textContent=soil.toFixed(1);
+  document.getElementById('lb-temp').style.width=Math.min(100,temp/50*100)+'%';
+  document.getElementById('lb-hum').style.width=Math.min(100,hum)+'%';
+  document.getElementById('lb-soil').style.width=Math.min(100,soil)+'%';
+  const pct=fuzzyBrowser(temp,hum,soil);
+  const ms=(pct*1500/100).toFixed(0);
+  document.getElementById('water-out').textContent=`Mức tưới: ${pct.toFixed(0)}% — ${ms}ms`;
+  const on=pct>5;
+  document.getElementById('pdot').className='pdot'+(on?' on':'');
+  document.getElementById('pump-txt').textContent=on?'Bơm: đang hoạt động':'Bơm: không hoạt động';
+}
+
+// ─── Nhận config / ACK từ ESP32 ─────────────────────────
+function onConfigData(e){
+  const raw=new TextDecoder().decode(e.target.value);
+  log('← '+raw.substring(0,60),'info');
+
+  if(raw.startsWith('CFG_SE:') || raw.startsWith('CFG_S:')){
+    cfgBuffer = raw.startsWith('CFG_SE:') ? raw.substring(7) : raw.substring(6);
+    if(raw.startsWith('CFG_SE:')) applyConfigJSON(cfgBuffer);
+  } else if(raw.startsWith('CFG_M:')){
+    cfgBuffer += raw.substring(6);
+  } else if(raw.startsWith('CFG_E:')){
+    cfgBuffer += raw.substring(6);
+    applyConfigJSON(cfgBuffer);
+    cfgBuffer='';
+  } else if(raw.startsWith('ACK:')){
+    toast('ESP32 xác nhận: '+raw.substring(4),'ok');
+  } else if(raw.startsWith('ERR:')){
+    toast('ESP32 lỗi: '+raw.substring(4),'err');
+  }
+}
+
+// ─── Parse JSON config từ ESP32 → điền vào UI ───────────
+function applyConfigJSON(json){
+  try{
+    const d=JSON.parse(json);
+    // MF
+    const mfMap={
+      sl:['s_low_a','s_low_b','s_low_c'], sm:['s_med_a','s_med_b','s_med_c'], sh:['s_hi_a','s_hi_b','s_hi_c'],
+      hl:['h_low_a','h_low_b','h_low_c'], hm:['h_med_a','h_med_b','h_med_c'], hh:['h_hi_a','h_hi_b','h_hi_c'],
+      th:['t_hot_a','t_hot_b','t_hot_c'], tm:['t_med_a','t_med_b','t_med_c'], tc:['t_cold_a','t_cold_b','t_cold_c']
+    };
+    Object.entries(mfMap).forEach(([k,ids])=>{
+      if(!d.mf||!d.mf[k]) return;
+      ids.forEach((id,i)=>setP(id,d.mf[k][i]));
+    });
+    // Rules
+    if(d.rl) for(let h=0;h<3;h++) for(let t=0;t<3;t++) rules[0][h][t]=d.rl[h][t];
+    if(d.rm) for(let h=0;h<3;h++) for(let t=0;t<3;t++) rules[1][h][t]=d.rm[h][t];
+    if(d.rh) for(let h=0;h<3;h++) for(let t=0;t<3;t++) rules[2][h][t]=d.rh[h][t];
+    redrawAll(); renderRules();
+    isDirty=false; updateSaveBtn();
+    toast('Đã đồng bộ config từ ESP32 ✓','ok');
+    log('Config đã nạp từ ESP32','info');
+  }catch(e){
+    log('Lỗi parse JSON: '+e.message,'err');
+  }
+}
+
+// ─── Gửi toàn bộ params lên ESP32 ───────────────────────
+async function pushAllToESP32(){
+  if(!configChar){toast('Chưa kết nối BLE','err');return;}
+  const ps=getParams();
+  const cmds=[];
+  // MF params
+  ['soil','hum','temp'].forEach(cat=>{
+    ps[cat].forEach(mf=>{
+      ['a','b','c'].forEach(k=>{
+        cmds.push(`MF:${mf.key}_${k}:${mf[k].toFixed(1)}`);
+      });
+    });
+  });
+  // Rules
+  for(let s=0;s<3;s++) for(let h=0;h<3;h++) for(let t=0;t<3;t++){
+    cmds.push(`RL:${s}:${h}:${t}:${rules[s][h][t]}`);
+  }
+  log(`Gửi ${cmds.length} lệnh lên ESP32...`,'info');
+  const dot=document.getElementById('ble-dot');
+  dot.className='dot sending';
+  for(const cmd of cmds){
+    await writeCmd(cmd);
+    await delay(60);  // BLE write cần khoảng nghỉ
+  }
+  dot.className='dot on';
+  isDirty=false; updateSaveBtn();
+  toast(`Đã gửi ${cmds.length} lệnh lên ESP32 ✓`,'ok');
+  log('Hoàn tất đồng bộ','info');
+}
+
+async function writeCmd(cmd){
+  if(!configChar) return;
+  const enc=new TextEncoder().encode(cmd);
+  await configChar.writeValueWithoutResponse(enc);
+  log('→ '+cmd,'');
+}
+
+// ─── Reset về mặc định ──────────────────────────────────
+function resetToDefault(){
+  if(!confirm('Reset về tham số mặc định?')) return;
+  const def={
+    s_low_a:0,s_low_b:20,s_low_c:30,
+    s_med_a:25,s_med_b:32,s_med_c:40,
+    s_hi_a:35,s_hi_b:45,s_hi_c:100,
+    h_low_a:0,h_low_b:40,h_low_c:60,
+    h_med_a:40,h_med_b:60,h_med_c:80,
+    h_hi_a:60,h_hi_b:80,h_hi_c:100,
+    t_hot_a:25,t_hot_b:30,t_hot_c:50,
+    t_med_a:20,t_med_b:25,t_med_c:30,
+    t_cold_a:0,t_cold_b:20,t_cold_c:25
+  };
+  Object.entries(def).forEach(([k,v])=>document.getElementById(k).value=v);
+  rules=[
+    [[2,2,1],[2,1,1],[1,1,1]],
+    [[2,1,1],[1,1,0],[1,0,0]],
+    [[0,0,0],[0,0,0],[0,0,0]]
+  ];
+  if(configChar) writeCmd('RESET');
+  isDirty=false; redrawAll(); renderRules(); updateSaveBtn();
+  toast('Đã reset mặc định','ok');
+}
+
+// ══════════════════════════════════════════════════════════
+// FUZZY (browser preview)
+// ══════════════════════════════════════════════════════════
+function fuzzyBrowser(temp,hum,soil){
+  const ps=getParams();
+  const sv=ps.soil.map(m=>triMem(soil,m.a,m.b,m.c));
+  const hv=ps.hum.map(m=>triMem(hum,m.a,m.b,m.c));
+  const tv=ps.temp.map(m=>triMem(temp,m.a,m.b,m.c));
+  let wH=0,wL=0,wN=0;
+  for(let s=0;s<3;s++) for(let h=0;h<3;h++) for(let t=0;t<3;t++){
+    const f=Math.min(sv[s],hv[h],tv[t]);
+    const o=rules[s][h][t];
+    if(o===2) wH=Math.max(wH,f);
+    else if(o===1) wL=Math.max(wL,f);
+    else wN=Math.max(wN,f);
+  }
+  const tot=wH+wL+wN;
+  return tot===0?0:(wH*100+wL*50)/tot;
+}
+
+// ══════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+(type||'');
+  setTimeout(()=>t.className='toast',2800);
+}
+
+let logLines=[];
+function log(msg,cls=''){
+  logLines.push(`<span class="${cls}">${msg}</span>`);
+  if(logLines.length>80) logLines.shift();
+  const b=document.getElementById('log-box');
+  if(b){b.innerHTML=logLines.join('<br>');b.scrollTop=b.scrollHeight;}
+}
+
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  setTimeout(redrawAll,80);
+  renderRules();
+  updateSaveBtn();
+});
+window.addEventListener('resize',redrawAll);
+</script>
+</body>
+</html>

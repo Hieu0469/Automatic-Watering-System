@@ -1,82 +1,37 @@
 #pragma once
 #include <Arduino.h>
+#include "FuzzyConfig.h"
 
-// ─── Hằng số đầu ra fuzzy ────────────────────────────────────────────────────
+// ─── Hằng số đầu ra ──────────────────────────────────────────────────────────
 #define WATER_NONE  0
 #define WATER_LOW   1
 #define WATER_HIGH  2
 
-// ─── Ma trận luật (giữ nguyên từ main.c gốc) ─────────────────────────────────
-// Hàng: độ ẩm không khí [thấp, vừa, cao]
-// Cột : nhiệt độ         [cao,  vừa, thấp]
-
-static const int RULE_MOIS_LOW[3][3] = {
-    {2, 2, 2},
-    {2, 2, 1},
-    {2, 1, 1}
-};
-static const int RULE_MOIS_MED[3][3] = {
-    {2, 1, 1},
-    {1, 1, 0},
-    {1, 0, 0}
-};
-static const int RULE_MOIS_HIGH[3][3] = {
-    {1, 0, 0},
-    {0, 0, 0},
-    {0, 0, 0}
-};
-
-// ─── Hàm membership ──────────────────────────────────────────────────────────
-
-inline float mem_soil_low(float s) {
-    if (s <= 30.0f) return 1.0f;
-    if (s >= 50.0f) return 0.0f;
-    return (50.0f - s) / 20.0f;
-}
-inline float mem_soil_med(float s) {
-    if (s <= 30.0f || s >= 70.0f) return 0.0f;
-    if (s < 50.0f) return (s - 30.0f) / 20.0f;
-    return (70.0f - s) / 20.0f;
-}
-inline float mem_soil_high(float s) {
-    if (s <= 50.0f) return 0.0f;
-    if (s >= 70.0f) return 1.0f;
-    return (s - 50.0f) / 20.0f;
+// ─── Hàm tam giác chung ──────────────────────────────────────────────────────
+// a=chân trái, b=đỉnh, c=chân phải
+// Khi a<=0 hoặc a==b: mở trái (trả 1 từ 0..b)
+// Khi c>=max hoặc b==c: mở phải (trả 1 từ b..max)
+inline float triMF(float x, float a, float b, float c) {
+    if (x <= a) return (a == b) ? 1.0f : 0.0f;
+    if (x >= c) return (b == c) ? 1.0f : 0.0f;
+    if (x <= b) return (b == a) ? 1.0f : (x - a) / (b - a);
+    return (c == b) ? 1.0f : (c - x) / (c - b);
 }
 
-inline float mem_temp_hot(float t) {
-    if (t <= 25.0f) return 0.0f;
-    if (t >= 30.0f) return 1.0f;
-    return (t - 25.0f) / 5.0f;
-}
-inline float mem_temp_med(float t) {
-    if (t <= 20.0f || t >= 30.0f) return 0.0f;
-    if (t < 25.0f) return (t - 20.0f) / 5.0f;
-    return (30.0f - t) / 5.0f;
-}
-inline float mem_temp_cold(float t) {
-    if (t <= 20.0f) return 1.0f;
-    if (t >= 25.0f) return 0.0f;
-    return (25.0f - t) / 5.0f;
-}
+// ─── Wrappers đọc từ FuzzyConfig (runtime, không hardcode) ───────────────────
+inline float mem_soil_low (float s) { auto &p=fuzzyConfig.params; return triMF(s,p.soil_low.a, p.soil_low.b, p.soil_low.c);  }
+inline float mem_soil_med (float s) { auto &p=fuzzyConfig.params; return triMF(s,p.soil_med.a, p.soil_med.b, p.soil_med.c);  }
+inline float mem_soil_high(float s) { auto &p=fuzzyConfig.params; return triMF(s,p.soil_hi.a,  p.soil_hi.b,  p.soil_hi.c);   }
 
-inline float mem_hum_low(float h) {
-    if (h <= 40.0f) return 1.0f;
-    if (h >= 60.0f) return 0.0f;
-    return (60.0f - h) / 20.0f;
-}
-inline float mem_hum_med(float h) {
-    if (h <= 40.0f || h >= 80.0f) return 0.0f;
-    if (h < 60.0f) return (h - 40.0f) / 20.0f;
-    return (80.0f - h) / 20.0f;
-}
-inline float mem_hum_high(float h) {
-    if (h <= 60.0f) return 0.0f;
-    if (h >= 80.0f) return 1.0f;
-    return (h - 60.0f) / 20.0f;
-}
+inline float mem_temp_hot (float t) { auto &p=fuzzyConfig.params; return triMF(t,p.temp_hot.a, p.temp_hot.b, p.temp_hot.c);  }
+inline float mem_temp_med (float t) { auto &p=fuzzyConfig.params; return triMF(t,p.temp_med.a, p.temp_med.b, p.temp_med.c);  }
+inline float mem_temp_cold(float t) { auto &p=fuzzyConfig.params; return triMF(t,p.temp_cold.a,p.temp_cold.b,p.temp_cold.c); }
 
-// ─── Defuzzify — trả về % thời gian tưới (0–100) ─────────────────────────────
+inline float mem_hum_low  (float h) { auto &p=fuzzyConfig.params; return triMF(h,p.hum_low.a,  p.hum_low.b,  p.hum_low.c);  }
+inline float mem_hum_med  (float h) { auto &p=fuzzyConfig.params; return triMF(h,p.hum_med.a,  p.hum_med.b,  p.hum_med.c);  }
+inline float mem_hum_high (float h) { auto &p=fuzzyConfig.params; return triMF(h,p.hum_hi.a,   p.hum_hi.b,   p.hum_hi.c);   }
+
+// ─── Defuzzify ────────────────────────────────────────────────────────────────
 inline float fuzzy_defuzzify(float temp, float hum, float soil) {
     float t[3] = { mem_temp_hot(temp),  mem_temp_med(temp),  mem_temp_cold(temp)  };
     float h[3] = { mem_hum_low(hum),    mem_hum_med(hum),    mem_hum_high(hum)    };
@@ -84,24 +39,17 @@ inline float fuzzy_defuzzify(float temp, float hum, float soil) {
 
     float wHigh = 0, wLow = 0, wNone = 0;
 
-    // Áp dụng 3 bảng luật theo mức độ ẩm đất
-    const int (*rules[3])[3] = { RULE_MOIS_LOW, RULE_MOIS_MED, RULE_MOIS_HIGH };
-
-    for (int m = 0; m < 3; m++) {           // soil level
-        for (int i = 0; i < 3; i++) {       // hum level
-            for (int j = 0; j < 3; j++) {   // temp level
+    for (int m = 0; m < 3; m++)
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
                 float firing = min(min(t[j], h[i]), s[m]);
-                int   output = rules[m][i][j];
+                int   output = fuzzyConfig.params.rules[m][i][j];
                 if      (output == WATER_HIGH) wHigh = max(wHigh, firing);
                 else if (output == WATER_LOW)  wLow  = max(wLow,  firing);
                 else                           wNone = max(wNone, firing);
             }
-        }
-    }
 
     float total = wHigh + wLow + wNone;
     if (total == 0.0f) return 0.0f;
-
-    // Centroid defuzzification: HIGH=100%, LOW=50%, NONE=0%
     return (wHigh * 100.0f + wLow * 50.0f) / total;
 }
