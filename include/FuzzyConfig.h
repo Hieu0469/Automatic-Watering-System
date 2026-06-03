@@ -128,15 +128,15 @@ public:
     }
 
     void loadDefaults() {
-        params.soil_low  = {0,  20, 30};
+        params.soil_low  = {-1,  0, 30};
         params.soil_med  = {25, 32, 40};
-        params.soil_hi   = {35, 45, 100};
-        params.hum_low   = {0,  40, 60};
+        params.soil_hi   = {35, 100, 101};
+        params.hum_low   = {-1,  0, 60};
         params.hum_med   = {40, 60, 80};
-        params.hum_hi    = {60, 80, 100};
-        params.temp_hot  = {25, 30, 50};
-        params.temp_med  = {20, 25, 30};
-        params.temp_cold = {0,  20, 25};
+        params.hum_hi    = {60, 100, 101};
+        params.temp_hot  = {30, 50, 51};
+        params.temp_med  = {15, 25, 30};
+        params.temp_cold = {-1,  0, 20};
         int def[3][3][3] = {
             {{2,2,1},{2,1,1},{1,1,1}},
             {{2,1,1},{1,1,0},{1,0,0}},

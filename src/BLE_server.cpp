@@ -100,10 +100,10 @@ void ble_server_init() {
 }
 
 // ─── Gửi dữ liệu cảm biến ────────────────────────────────────────────────────
-void ble_send_sensor_data(float temp, float hum, float soil) {
+void ble_send_sensor_data(float temp, float hum, float soil, int waterMs, int failCount) {
     if (!deviceConnected || !pSensorChar) return;
-    char buf[50];
-    snprintf(buf, sizeof(buf), "%.1f,%.1f,%.1f", temp, hum, soil);
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.1f,%.1f,%.1f,%d,%d", temp, hum, soil, waterMs, failCount);
     pSensorChar->setValue(buf);
     pSensorChar->notify();
 }
@@ -132,3 +132,13 @@ void ble_send_config(const String &json) {
 bool ble_is_connected() { return deviceConnected; }
 bool ble_config_requested() { return configRequested; }
 void ble_clear_config_request() { configRequested = false; }
+
+
+// ─── Gửi alert về web ────────────────────────────────────────────────────────
+// msg: "ALERT:NO_WATER" hoặc "ALERT:CLEAR"
+void ble_send_alert_msg(const String &msg) {
+    if (!deviceConnected || !pConfigChar) return;
+    pConfigChar->setValue(msg.c_str());
+    pConfigChar->notify();
+    Serial.printf("[BLE] Da gui alert: %s\n", msg.c_str());
+}

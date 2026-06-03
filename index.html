@@ -66,6 +66,11 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
 .log-box .err{color:#fca5a5}
 .log-box .warn{color:#fde68a}
 .log-box .info{color:#a5f3fc}
+/* Fail counter badge */
+.fail-badge{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;border-radius:8px;font-size:20px;font-weight:700;padding:0 8px;background:#f1f0ea;color:#78716c;border:1.5px solid #e5e2db;transition:all .4s}
+.fail-badge.warn{background:#fff7ed;color:#ea580c;border-color:#fb923c}
+.fail-badge.danger{background:#fef2f2;color:#dc2626;border-color:#f87171;animation:failPulse 1s ease-in-out infinite}
+@keyframes failPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
 </style>
 </head>
 <body>
@@ -102,8 +107,8 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
         <thead><tr><th>Hàm</th><th>a</th><th>b (đỉnh)</th><th>c</th></tr></thead>
         <tbody>
           <tr><td style="color:#3b82f6;font-weight:500">Thấp</td>
-            <td><input type="number" id="s_low_a" value="0"   onchange="paramChanged()"></td>
-            <td><input type="number" id="s_low_b" value="20"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_low_a" value="-1"   onchange="paramChanged()"></td>
+            <td><input type="number" id="s_low_b" value="0"  onchange="paramChanged()"></td>
             <td><input type="number" id="s_low_c" value="30"  onchange="paramChanged()"></td></tr>
           <tr><td style="color:#f59e0b;font-weight:500">Vừa</td>
             <td><input type="number" id="s_med_a" value="25"  onchange="paramChanged()"></td>
@@ -111,8 +116,8 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
             <td><input type="number" id="s_med_c" value="40"  onchange="paramChanged()"></td></tr>
           <tr><td style="color:#10b981;font-weight:500">Cao</td>
             <td><input type="number" id="s_hi_a"  value="35"  onchange="paramChanged()"></td>
-            <td><input type="number" id="s_hi_b"  value="45"  onchange="paramChanged()"></td>
-            <td><input type="number" id="s_hi_c"  value="100" onchange="paramChanged()"></td></tr>
+            <td><input type="number" id="s_hi_b"  value="100"  onchange="paramChanged()"></td>
+            <td><input type="number" id="s_hi_c"  value="101" onchange="paramChanged()"></td></tr>
         </tbody>
       </table>
     </div>
@@ -129,8 +134,8 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
         <thead><tr><th>Hàm</th><th>a</th><th>b (đỉnh)</th><th>c</th></tr></thead>
         <tbody>
           <tr><td style="color:#3b82f6;font-weight:500">Thấp</td>
-            <td><input type="number" id="h_low_a" value="0"   onchange="paramChanged()"></td>
-            <td><input type="number" id="h_low_b" value="40"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_low_a" value="-1"   onchange="paramChanged()"></td>
+            <td><input type="number" id="h_low_b" value="0"  onchange="paramChanged()"></td>
             <td><input type="number" id="h_low_c" value="60"  onchange="paramChanged()"></td></tr>
           <tr><td style="color:#f59e0b;font-weight:500">Vừa</td>
             <td><input type="number" id="h_med_a" value="40"  onchange="paramChanged()"></td>
@@ -138,8 +143,8 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
             <td><input type="number" id="h_med_c" value="80"  onchange="paramChanged()"></td></tr>
           <tr><td style="color:#10b981;font-weight:500">Cao</td>
             <td><input type="number" id="h_hi_a"  value="60"  onchange="paramChanged()"></td>
-            <td><input type="number" id="h_hi_b"  value="80"  onchange="paramChanged()"></td>
-            <td><input type="number" id="h_hi_c"  value="100" onchange="paramChanged()"></td></tr>
+            <td><input type="number" id="h_hi_b"  value="100"  onchange="paramChanged()"></td>
+            <td><input type="number" id="h_hi_c"  value="101" onchange="paramChanged()"></td></tr>
         </tbody>
       </table>
     </div>
@@ -156,17 +161,17 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
         <thead><tr><th>Hàm</th><th>a</th><th>b (đỉnh)</th><th>c</th></tr></thead>
         <tbody>
           <tr><td style="color:#ef4444;font-weight:500">Nóng</td>
-            <td><input type="number" id="t_hot_a"  value="25" onchange="paramChanged()"></td>
-            <td><input type="number" id="t_hot_b"  value="30" onchange="paramChanged()"></td>
-            <td><input type="number" id="t_hot_c"  value="50" onchange="paramChanged()"></td></tr>
+            <td><input type="number" id="t_hot_a"  value="30" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_hot_b"  value="50" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_hot_c"  value="51" onchange="paramChanged()"></td></tr>
           <tr><td style="color:#f59e0b;font-weight:500">Vừa</td>
-            <td><input type="number" id="t_med_a"  value="20" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_med_a"  value="15" onchange="paramChanged()"></td>
             <td><input type="number" id="t_med_b"  value="25" onchange="paramChanged()"></td>
             <td><input type="number" id="t_med_c"  value="30" onchange="paramChanged()"></td></tr>
           <tr><td style="color:#3b82f6;font-weight:500">Lạnh</td>
-            <td><input type="number" id="t_cold_a" value="0"  onchange="paramChanged()"></td>
-            <td><input type="number" id="t_cold_b" value="20" onchange="paramChanged()"></td>
-            <td><input type="number" id="t_cold_c" value="25" onchange="paramChanged()"></td></tr>
+            <td><input type="number" id="t_cold_a" value="-1"  onchange="paramChanged()"></td>
+            <td><input type="number" id="t_cold_b" value="0" onchange="paramChanged()"></td>
+            <td><input type="number" id="t_cold_c" value="20" onchange="paramChanged()"></td></tr>
         </tbody>
       </table>
     </div>
@@ -207,6 +212,18 @@ body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;font-size
         <div class="lv" id="lv-soil" style="color:#10b981">--</div>
         <div class="ll">Độ ẩm đất (%)</div>
         <div class="lbar"><div class="lbar-fill" id="lb-soil" style="background:#10b981;width:0%"></div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+      <div class="live-card" style="text-align:center">
+        <div class="lv" id="lv-water" style="color:#8b5cf6;font-size:20px">--</div>
+        <div class="ll">Thời gian bơm (ms)</div>
+        <div class="lbar" style="margin-top:8px"><div class="lbar-fill" id="lb-water" style="background:#8b5cf6;width:0%"></div></div>
+      </div>
+      <div class="live-card" style="text-align:center">
+        <div class="fail-badge" id="fail-badge">0</div>
+        <div class="ll" style="margin-top:6px">Lần bơm không hiệu quả</div>
+        <div style="font-size:10px;color:#d97706;margin-top:3px">≥ 2 → cảnh báo hết nước</div>
       </div>
     </div>
     <div class="pump-row" id="pump-row">
@@ -455,19 +472,42 @@ function onSensorData(e){
   const raw=new TextDecoder().decode(e.target.value);
   const parts=raw.split(',');
   if(parts.length<3) return;
-  const temp=parseFloat(parts[0]),hum=parseFloat(parts[1]),soil=parseFloat(parts[2]);
+  const temp=parseFloat(parts[0]), hum=parseFloat(parts[1]), soil=parseFloat(parts[2]);
+  const waterMs   = parts.length>=4 ? parseInt(parts[3]) : 0;
+  const failCount = parts.length>=5 ? parseInt(parts[4]) : 0;
+
+  // Cập nhật sensor cards
   document.getElementById('lv-temp').textContent=temp.toFixed(1);
   document.getElementById('lv-hum').textContent=hum.toFixed(1);
   document.getElementById('lv-soil').textContent=soil.toFixed(1);
   document.getElementById('lb-temp').style.width=Math.min(100,temp/50*100)+'%';
   document.getElementById('lb-hum').style.width=Math.min(100,hum)+'%';
   document.getElementById('lb-soil').style.width=Math.min(100,soil)+'%';
-  const pct=fuzzyBrowser(temp,hum,soil);
-  const ms=(pct*1500/100).toFixed(0);
-  document.getElementById('water-out').textContent=`Mức tưới: ${pct.toFixed(0)}% — ${ms}ms`;
-  const on=pct>5;
-  document.getElementById('pdot').className='pdot'+(on?' on':'');
-  document.getElementById('pump-txt').textContent=on?'Bơm: đang hoạt động':'Bơm: không hoạt động';
+
+  // Water time card
+  const wEl=document.getElementById('lv-water');
+  if(wEl){ wEl.textContent=waterMs; document.getElementById('lb-water').style.width=Math.min(100,waterMs/1500*100)+'%'; }
+
+  // Pump status
+  document.getElementById('pdot').className='pdot'+(waterMs>0?' on':'');
+  document.getElementById('pump-txt').textContent=waterMs>0?'Bơm: đang hoạt động':'Bơm: không hoạt động';
+  document.getElementById('water-out').textContent='';
+
+  // Fail counter — nhận trực tiếp từ ESP32, không tính lại ở browser
+  updateFailBadge(failCount);
+
+  // Nếu web mở muộn (miss ALERT notify), tự trigger từ failCount
+  if(failCount>=2 && !alertActive)      handleAlert('NO_WATER');
+  else if(failCount===0 && alertActive) handleAlert('CLEAR');
+
+  log(`← ${temp}°C | ${hum}% | soil ${soil}% | bơm ${waterMs}ms | lỗi ${failCount}lần`,'info');
+}
+
+function updateFailBadge(n){
+  const el=document.getElementById('fail-badge');
+  if(!el) return;
+  el.textContent=n;
+  el.className = n===0 ? 'fail-badge' : n===1 ? 'fail-badge warn' : 'fail-badge danger';
 }
 
 // ─── Nhận config / ACK từ ESP32 ─────────────────────────
@@ -559,15 +599,15 @@ async function writeCmd(cmd){
 function resetToDefault(){
   if(!confirm('Reset về tham số mặc định?')) return;
   const def={
-    s_low_a:0,s_low_b:20,s_low_c:30,
+    s_low_a:-1,s_low_b:0,s_low_c:30,
     s_med_a:25,s_med_b:32,s_med_c:40,
-    s_hi_a:35,s_hi_b:45,s_hi_c:100,
-    h_low_a:0,h_low_b:40,h_low_c:60,
+    s_hi_a:35,s_hi_b:100,s_hi_c:101,
+    h_low_a:-1,h_low_b:0,h_low_c:60,
     h_med_a:40,h_med_b:60,h_med_c:80,
-    h_hi_a:60,h_hi_b:80,h_hi_c:100,
-    t_hot_a:25,t_hot_b:30,t_hot_c:50,
-    t_med_a:20,t_med_b:25,t_med_c:30,
-    t_cold_a:0,t_cold_b:20,t_cold_c:25
+    h_hi_a:60,h_hi_b:100,h_hi_c:101,
+    t_hot_a:30,t_hot_b:50,t_hot_c:51,
+    t_med_a:15,t_med_b:25,t_med_c:30,
+    t_cold_a:-1,t_cold_b:0,t_cold_c:20
   };
   Object.entries(def).forEach(([k,v])=>document.getElementById(k).value=v);
   rules=[
